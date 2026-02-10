@@ -1,0 +1,7 @@
+NDP = 0
+CONTROL = 1
+ACK = 2
+DATA = 3
+KEY_SEED = 4
+KEY_ACK = 5
+KEY_ERROR = 6

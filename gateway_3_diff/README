@@ -1,0 +1,1 @@
+Gateway nr 3 różni się jedynie drobną implementacją w `Listener.py`, tzn. zamiast odrzucania wybranych pakietów odbierał wszystkie i wyświetlał je na stronie
