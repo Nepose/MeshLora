@@ -112,7 +112,7 @@ class TestCheckSignature:
 
 class TestVerifyPsk:
     def test_valid_two_bytes(self):
-        assert Protocol.verify_psk(b"\xAB\xCD") is True
+        assert Protocol.verify_psk(b"\xab\xcd") is True
 
     def test_valid_zeros(self):
         assert Protocol.verify_psk(b"\x00\x00") is True
@@ -189,50 +189,36 @@ class TestBuildPacket:
         assert len(frames) == 1
 
     def test_non_data_frame_flag_byte(self):
-        frames, _ = Protocol.build_packet(
-            self.SRC, self.DST, Flags.KEY_SEED, b"payload", self.PSK
-        )
+        frames, _ = Protocol.build_packet(self.SRC, self.DST, Flags.KEY_SEED, b"payload", self.PSK)
         assert frames[0][5] == Flags.KEY_SEED
 
     def test_non_data_frame_src_encoded(self):
-        frames, _ = Protocol.build_packet(
-            self.SRC, self.DST, Flags.KEY_SEED, b"payload", self.PSK
-        )
+        frames, _ = Protocol.build_packet(self.SRC, self.DST, Flags.KEY_SEED, b"payload", self.PSK)
         src_bytes = frames[0][_SRC_START : _SRC_START + Protocol.ADDR_BYTES]
         assert Protocol.decode_addr(src_bytes) == self.SRC
 
     def test_non_data_frame_dst_encoded(self):
-        frames, _ = Protocol.build_packet(
-            self.SRC, self.DST, Flags.KEY_SEED, b"payload", self.PSK
-        )
+        frames, _ = Protocol.build_packet(self.SRC, self.DST, Flags.KEY_SEED, b"payload", self.PSK)
         dst_bytes = frames[0][_DST_START : _DST_START + Protocol.ADDR_BYTES]
         assert Protocol.decode_addr(dst_bytes) == self.DST
 
     def test_string_payload_converted_to_bytes(self):
-        frames, _ = Protocol.build_packet(
-            self.SRC, self.DST, Flags.KEY_SEED, "hello", self.PSK
-        )
+        frames, _ = Protocol.build_packet(self.SRC, self.DST, Flags.KEY_SEED, "hello", self.PSK)
         assert isinstance(frames[0], bytes)
 
     def test_long_data_produces_multiple_frames(self):
-        frames, _ = Protocol.build_packet(
-            self.SRC, self.DST, Flags.DATA, b"X" * 200, self.PSK
-        )
+        frames, _ = Protocol.build_packet(self.SRC, self.DST, Flags.DATA, b"X" * 200, self.PSK)
         # Expect data frames + finish frame - at least 3 total
         assert len(frames) > 2
 
     def test_data_counters_start_at_zero_and_increment(self):
-        frames, _ = Protocol.build_packet(
-            self.SRC, self.DST, Flags.DATA, b"X" * 100, self.PSK
-        )
+        frames, _ = Protocol.build_packet(self.SRC, self.DST, Flags.DATA, b"X" * 100, self.PSK)
         # Exclude the finish frame
         counters = [frame[_COUNTER_POS] for frame in frames[:-1]]
         assert counters == list(range(len(counters)))
 
     def test_all_data_frames_pass_check_signature(self):
-        frames, _ = Protocol.build_packet(
-            self.SRC, self.DST, Flags.DATA, b"hello world", self.PSK
-        )
+        frames, _ = Protocol.build_packet(self.SRC, self.DST, Flags.DATA, b"hello world", self.PSK)
         for frame in frames:
             assert Protocol.check_signature(frame)
 
@@ -275,12 +261,26 @@ class TestParseFrame:
 
     def test_frame_without_payload_has_no_payload_key(self):
         # A frame at exactly the counter position with nothing after
-        frame = b"!mesh" + bytes([Flags.KEY_SEED]) + Protocol.encode_addr(self.SRC) + Protocol.encode_addr(self.DST) + self.PSK
+        frame = (
+            b"!mesh"
+            + bytes([Flags.KEY_SEED])
+            + Protocol.encode_addr(self.SRC)
+            + Protocol.encode_addr(self.DST)
+            + self.PSK
+        )
         parsed = Protocol.parse_frame(frame)
         assert "payload" not in parsed
 
     def test_all_data_flag_values(self):
-        for flag in [Flags.NDP, Flags.CONTROL, Flags.ACK, Flags.DATA, Flags.KEY_SEED, Flags.KEY_ACK, Flags.KEY_ERROR]:
+        for flag in [
+            Flags.NDP,
+            Flags.CONTROL,
+            Flags.ACK,
+            Flags.DATA,
+            Flags.KEY_SEED,
+            Flags.KEY_ACK,
+            Flags.KEY_ERROR,
+        ]:
             parsed = Protocol.parse_frame(self._frame(flag=flag))
             assert parsed["flag"] == flag
 
@@ -290,7 +290,7 @@ class TestBuildParseRoundtrip:
 
     SRC = 300
     DST = 400
-    PSK = b"\xAB\xCD"
+    PSK = b"\xab\xcd"
 
     def _build_and_parse_first(self, flag, payload):
         frames, _ = Protocol.build_packet(self.SRC, self.DST, flag, payload, self.PSK)
@@ -317,15 +317,11 @@ class TestBuildParseRoundtrip:
         assert "payload" in parsed
 
     def test_data_frames_counters_sequential(self):
-        frames, _ = Protocol.build_packet(
-            self.SRC, self.DST, Flags.DATA, b"A" * 100, self.PSK
-        )
+        frames, _ = Protocol.build_packet(self.SRC, self.DST, Flags.DATA, b"A" * 100, self.PSK)
         counters = [Protocol.parse_frame(f)["counter"] for f in frames[:-1]]
         assert counters == list(range(len(counters)))
 
     def test_finish_frame_ends_with_finish_bytes(self):
-        frames, _ = Protocol.build_packet(
-            self.SRC, self.DST, Flags.DATA, b"hello", self.PSK
-        )
+        frames, _ = Protocol.build_packet(self.SRC, self.DST, Flags.DATA, b"hello", self.PSK)
         finish = Protocol.parse_frame(frames[-1])
         assert finish["payload"] == b"!finish"
