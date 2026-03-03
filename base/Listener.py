@@ -92,9 +92,9 @@ class Listener:
 
                     if b"!finish" != result["payload"]:
                         payload = (
-                            int.from_bytes(result["payload"])
+                            int.from_bytes(result["payload"], byteorder="big")
                             ^ self._node._chains[result["src"]]["shared"]
-                        ).to_bytes(length=len(result["payload"]))
+                        ).to_bytes(length=len(result["payload"]), byteorder="big")
                     else:
                         payload = result["payload"]
 
@@ -155,8 +155,9 @@ class Listener:
             try:
                 for i in range(0, len(data), x):
                     payload += (
-                        int.from_bytes(data[0 + i : x + i]) ^ self._node._chains[dst]["shared"]
-                    ).to_bytes(length=len(data[0 + i : x + i]))
+                        int.from_bytes(data[0 + i : x + i], byteorder="big")
+                        ^ self._node._chains[dst]["shared"]
+                    ).to_bytes(length=len(data[0 + i : x + i]), byteorder="big")
             except OverflowError as e:
                 log("unexpected overflow error when sending data, try again !")
                 return {"error": True, "description": str(e)}

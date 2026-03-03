@@ -21,9 +21,6 @@ class Node:
     def __call__(self):
         return self._received_box
 
-    def log(self, prompt):
-        print(f"{Colors.OKBLUE}[LOG] {prompt}{Colors.ENDC}")
-
     def sendFrame(self, dst, flag: Flags, payload, psk=None) -> dict:
         packet, psk = Protocol.build_packet(self._num, dst, flag, payload, psk)
         self._sent_box[psk] = []
@@ -32,7 +29,7 @@ class Node:
             for x in packet:
                 r = self._serial.sendData(x)
                 self._sent_box[psk].append(r.id)
-                self.log(f"{r.id} sent")
+                Colors.log(f"{r.id} sent")
                 time.sleep(6)
             return {"error": False, "psk": psk}
         except Exception as e:
