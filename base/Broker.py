@@ -48,7 +48,9 @@ class Broker:
             payload_local = {"mqtt_id": msg.topic.split("/")[2], "content": payload_mqtt["content"]}
             result = self.LISTENER.initDataSend(str(payload_local).encode(), payload_mqtt["dst"])
             if result["error"]:
-                log(f"a problem with data transmission: {result['description']}, trying again")
+                log(
+                    f"a problem with data transmission: {result.get('description', str(result['error']))}, trying again"
+                )
                 return
 
             match result["status"]:

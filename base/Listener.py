@@ -26,6 +26,10 @@ class Listener:
             return
 
         result = Protocol.parse_frame(raw["frame"])
+        if "payload" not in result or "counter" not in result:
+            log("received a frame with no payload/counter, discarding")
+            return
+
         if self._node._lock.locked():
             logCyan("error: node is locked at the moment, can't write on it")
             return
@@ -183,7 +187,7 @@ class Listener:
 
         x = self._node.sendFrame(dst, Flags.KEY_SEED, str({"g": g, "p": p, "A": A}))
         if x["error"]:
-            return {"error": x["error"]["e"], "status": "keyseed"}
+            return {"error": str(x["error"]), "status": "keyseed"}
 
         self._node._chains[dst]["psk"] = x["psk"]
         return {"error": False, "status": "keyseed"}
