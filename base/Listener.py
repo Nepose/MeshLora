@@ -10,7 +10,6 @@ from Node import Node
 
 _MIN_PRIME = 300000000
 _MAX_PRIME = 500000000
-_HEAD_LEN = 16
 
 
 class Listener:
@@ -90,26 +89,19 @@ class Listener:
                         log(f"received a Data from {result['src']} without a prior key exchange")
                         return
 
-                    if b"!finish" != result["payload"]:
-                        payload = (
-                            int.from_bytes(result["payload"], byteorder="big")
-                            ^ self._node._chains[result["src"]]["shared"]
-                        ).to_bytes(length=len(result["payload"]), byteorder="big")
-                    else:
-                        payload = result["payload"]
-
+                    # Store raw frame bytes - decrypt after full reassembly
                     try:
                         self._node._received_box[result["src"]][result["psk"]][
                             result["counter"]
-                        ] = payload
+                        ] = result["payload"]
                     except KeyError:
                         self._node._received_box[result["src"]] = {
-                            result["psk"]: {result["counter"]: payload}
+                            result["psk"]: {result["counter"]: result["payload"]}
                         }
 
                     log(f"received a Data frame from {result['src']}, counter={result['counter']}")
 
-                    if "!finish" != payload.decode():
+                    if b"!finish" != result["payload"]:
                         logCyan("not Finished yet, awaiting further data")
                         return
 
@@ -126,9 +118,20 @@ class Listener:
                             self._node._chains.pop(result["src"])
                             return
 
-                    logCyan(
-                        f"total message: {b''.join(list(list_counter.values())).decode()[: -len('!finish')]}"
+                    ciphertext = b"".join(list_counter[i] for i in range(max_counter))
+                    psk_bytes = result["psk"].to_bytes(Protocol.PSK_BYTES, byteorder="big")
+                    key = Cipher.derive_session_key(
+                        self._node._chains[result["src"]]["shared"], psk_bytes
                     )
+                    nonce = Cipher.build_nonce(result["src"], self._node._num, psk_bytes)
+                    try:
+                        plaintext = Cipher.decrypt_payload(key, nonce, ciphertext)
+                    except Exception:
+                        logCyan(f"decryption failed for message from {result['src']}, discarding")
+                        self._node._chains.pop(result["src"])
+                        return
+
+                    logCyan(f"total message: {plaintext.decode()}")
 
                     self._node.sendFrame(result["src"], Flags.ACK, str(result["psk"]))
                     self._node._chains.pop(result["src"])
@@ -149,22 +152,14 @@ class Listener:
         if dst in self._node._chains and "shared" in self._node._chains[dst]:
             log("the key handshake was successful, sending data")
 
-            payload = b""
-            x = Protocol.MAX_PACKAGE_LEN - _HEAD_LEN
+            data_psk = Protocol.generate_psk()
+            key = Cipher.derive_session_key(self._node._chains[dst]["shared"], data_psk)
+            nonce = Cipher.build_nonce(self._node._num, dst, data_psk)
+            ciphertext = Cipher.encrypt_payload(key, nonce, data)
 
-            try:
-                for i in range(0, len(data), x):
-                    payload += (
-                        int.from_bytes(data[0 + i : x + i], byteorder="big")
-                        ^ self._node._chains[dst]["shared"]
-                    ).to_bytes(length=len(data[0 + i : x + i]), byteorder="big")
-            except OverflowError as e:
-                log("unexpected overflow error when sending data, try again !")
-                return {"error": True, "description": str(e)}
+            log(f"preparing to send {len(ciphertext)} encrypted bytes to {dst}")
 
-            log(f"preparing to send {len(payload)} encrypted bytes to {dst}")
-
-            a = self._node.sendFrame(dst, Flags.DATA, payload)
+            a = self._node.sendFrame(dst, Flags.DATA, ciphertext, psk=data_psk)
             if not a["error"]:
                 log("data send successfully")
                 self._node._chains.pop(dst)
