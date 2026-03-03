@@ -12,6 +12,6 @@ if [ "$#" -ne 3 ]; then
 fi
 
 echo "sending mosquitto msg"
-mosquitto_pub -u $USERNAME -P $PASSWORD -h $BROKER -p $PORT -t "${TOPIC_FAMILY}${1}" \
+mosquitto_pub -u "$USERNAME" -P "$PASSWORD" -h "$BROKER" -p "$PORT" -t "${TOPIC_FAMILY}${1}" \
 	-m "{'dst': ${2}, 'content': '${3}'}"
 echo "mosquitto msg sent"
