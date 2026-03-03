@@ -1,0 +1,42 @@
+# Ruff configuration for meshlora project
+# https://docs.astral.sh/ruff/settings/
+
+line-length = 100
+target-version = "py311"
+
+[lint]
+# Select rules to enable
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "N",     # pep8-naming
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "C4",    # flake8-comprehensions
+    "RUF",   # Ruff-specific rules
+]
+
+# Ignore specific rules
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults
+    "C901",   # too complex
+    "RUF001", # f-string contains unexpected escape sequence
+]
+
+[lint.per-file-ignores]
+"__main__.py" = ["E402"]  # import at top of file is okay for CLI entry points
+"gateway_*/*" = ["E402", "N802", "N803"]  # gateway files have different conventions
+"tests/*" = ["N806"]  # uppercase vars (e.g. A, B) are standard DH notation
+
+[format]
+# Use the formatter
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[lint.isort]
+# Known first-party modules
+known-first-party = ["base", "gateway_1_diff", "gateway_2_diff"]

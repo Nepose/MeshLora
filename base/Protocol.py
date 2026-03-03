@@ -23,14 +23,14 @@ def generate_psk() -> bytes:
 
 
 def verify_psk(psk) -> bool:
-    return bytes == type(psk) and 2 == len(psk)
+    return type(psk) is bytes and len(psk) == 2
 
 
 def build_packet(src: int, dst: int, flag: int, payload: bytes, psk=None) -> tuple:
     """ Construct a set of N >= 1 frames based on a given payload. """
 
     flag_byte = bytes([flag & 0xFF])
-    if None == psk or not verify_psk(psk):
+    if psk is None or not verify_psk(psk):
         psk = generate_psk()
 
     head = (
@@ -44,7 +44,7 @@ def build_packet(src: int, dst: int, flag: int, payload: bytes, psk=None) -> tup
     if 0 == len(payload):
         return head
 
-    if bytes != type(payload):
+    if type(payload) is not bytes:
         payload = payload.encode()
 
     counter = 0

@@ -33,7 +33,7 @@ try:
 #                user_input = input("enter message, max 50 chars\n$ ")
 
             temp = temperature()
-            if True == temp['error']:
+            if temp['error']:
                 time.sleep(1)
                 logCyan("couldn't read temperature :( try again later")
                 button_state = 0
