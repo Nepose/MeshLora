@@ -28,7 +28,9 @@ ignore = [
 
 [lint.per-file-ignores]
 "__main__.py" = ["E402"]  # import at top of file is okay for CLI entry points
-"gateway_*/*" = ["E402", "N802", "N803"]  # gateway files have different conventions
+"base/*" = ["N802", "N806"]  # camelCase methods and uppercase DH vars are intentional project conventions
+"base/Broker.py" = ["N802", "N806", "E402"]  # log() before imports is intentional startup tracing
+"gateway_*/*" = ["E402", "N802", "N803", "N816"]  # gateway files have different conventions
 "tests/*" = ["N806"]  # uppercase vars (e.g. A, B) are standard DH notation
 
 [format]

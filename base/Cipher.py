@@ -1,7 +1,5 @@
-from math import isqrt
-
 def prime_factors_distinct(n: int) -> list[int]:
-    """ Return distinct prime factors of n. """
+    """Return distinct prime factors of n."""
     factors = []
     d = 2
     while d * d <= n:
@@ -14,8 +12,9 @@ def prime_factors_distinct(n: int) -> list[int]:
         factors.append(n)
     return factors
 
+
 def find_generator_mod_prime(p: int) -> int:
-    """ Find a primitive root modulo prime p (generator of Z_p*). """
+    """Find a primitive root modulo prime p (generator of Z_p*)."""
     if p < 3:
         raise ValueError("p must be an odd prime >= 3")
     phi = p - 1
@@ -28,7 +27,7 @@ def find_generator_mod_prime(p: int) -> int:
 
     raise RuntimeError("No generator found (p might not be prime?)")
 
-#p = 1019  # example prime in your range
-#g = find_generator_mod_prime(p)
-#print("p =", p, "g =", g)
 
+# p = 1019  # example prime in your range
+# g = find_generator_mod_prime(p)
+# print("p =", p, "g =", g)
